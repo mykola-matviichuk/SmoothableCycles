@@ -285,7 +285,7 @@ lemma rationalityRelativeToColoredEdge (hB) :
 
 
 
-theorem rationalityEdges (hB: ∀ i j, B i j = - B j i) :
+lemma rationalityEdgesRelative (hB: ∀ i j, B i j = - B j i) :
   graphConnected hB → ∀ (i₁ j₁ i₂ j₂ : V),
   (hi₂j₂: B i₂ j₂ ≠ 0) →  rational_ratio  (B i₁ j₁)  (B i₂ j₂) :=
   by
@@ -297,3 +297,19 @@ theorem rationalityEdges (hB: ∀ i j, B i j = - B j i) :
       have hi₂j₂kl : rational_ratio (B i₂ j₂) (B k l) := rationalityRelativeToColoredEdge hB hc k l i₂ j₂ hkl
       have hkli₂j₂ : rational_ratio (B k l) (B i₂ j₂)  := rational_ratio_symm (B i₂ j₂) (B k l) hi₂j₂ hi₂j₂kl
       exact rational_ratio_trans (B i₁ j₁) (B k l) (B i₂ j₂) hi₁j₁kl hkli₂j₂
+
+theorem rationalityEdge (hB: ∀ i j, B i j = - B j i ) :
+  graphConnected hB → ∃ c:ℂ, ∀ (i j:V), rational_ratio (B i j) c := by
+    intro hc
+    by_cases all0 : ∀ i j: V, B i j =0
+    · use 1
+      intro i j
+      have bij0: B i j = 0 := all0 i j
+      exact zero_rational_ratio (B i j) 1 bij0
+    · have exne: ∃ (i j :V), B i j ≠ 0 := by
+        push_neg at all0
+        exact all0
+      obtain ⟨k,l,bijn0⟩ := exne
+      use (B k l)
+      intro i j
+      exact rationalityEdgesRelative hB hc i j k l bijn0
