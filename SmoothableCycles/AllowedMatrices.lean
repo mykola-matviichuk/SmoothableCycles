@@ -8,6 +8,7 @@ variable {α : Type*} {n : ℕ}
 
 def shift (v : Fin n → α) : Fin n → α := v ∘ (finRotate n).symm
 
+
 lemma shift_apply (v : Fin n → α) (i : Fin n) : shift v i = v ((finRotate n).symm i) := rfl
 
 lemma iterate_shift_apply (v : Fin n → α) {m : ℕ} (i : Fin n) :
@@ -47,6 +48,7 @@ lemma row_sum_X4 (i : Fin 4) : ∑ j, X4 R i j = 0 := by
 
 end X4
 
+
 section Y
 
 def Y_top (l : ℕ) : Matrix (Fin 2) (Fin (4 * l + 6)) R :=
@@ -57,6 +59,8 @@ def Y_top (l : ℕ) : Matrix (Fin 2) (Fin (4 * l + 6)) R :=
 
 def Y (l : ℕ) : Matrix (Fin (4 * l + 6)) (Fin (4 * l + 6)) R :=
   Matrix.of fun i => shift^[(i / 2) * 2] (Y_top R l i)
+
+
 
 lemma univ_eq_union {m n : ℕ} :
     (Finset.univ : Finset (Fin (m + n))) =
