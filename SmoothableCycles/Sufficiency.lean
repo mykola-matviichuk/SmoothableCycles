@@ -4,26 +4,93 @@ open Matrix
 
 section shift
 
-variable {α : Type*} {n : ℕ}
+variable {α : Type*} {n n': ℕ}
 
 def shift (v : Fin n → α) : Fin n → α := v ∘ (finRotate n).symm
 
 def prev (i : Fin n) : Fin n := (finRotate n).symm i
 
-def succ (i : Fin n) : Fin n := finRotate n i
+def next (i : Fin n) : Fin n := finRotate n i
 
-lemma prev_succ (i : Fin n) : prev (succ i) = i := by
-  rw [prev, succ]
+lemma prev_next (i : Fin n) : prev (next i) = i := by
+  rw [prev, next]
   exact Equiv.symm_apply_apply (finRotate n) i
 
 lemma shift_prev_eq (v : Fin n → α) (i : Fin n) : shift v i = v (prev i) := by
   dsimp [shift, prev]
 
-lemma shift_succ_eq (v : Fin n → α) (i : Fin n) : shift v (succ i) = v i := by
+lemma shift_succ_eq (v : Fin n → α) (i : Fin n) : shift v (next i) = v i := by
   rw [@shift_prev_eq]
-  rw [@prev_succ]
+  rw [@prev_next]
 
 lemma shift_prev_iter (k:ℕ) : ∀ (v : Fin n → α) (i: Fin n) , shift^[k] v i = v (prev^[k] i) := by
+  induction' k with k ih
+  · intro v i
+    rfl
+  · intro v i
+    calc
+      shift^[k + 1] v i = shift (shift^[k] v) i := by
+        rw [Function.iterate_succ']
+        rw [Function.comp_apply]
+      _ = shift^[k] v (prev i) := by rfl
+      _ = v (prev^[k] (prev i)) := by rw [ih]
+      _ = v (prev^[k + 1] i) := by
+        simp only [Function.iterate_succ, Function.comp_apply]
+
+lemma next_add_one (i: Fin (n'+1)) (ineqn : i ≠ Fin.last n') : (next i : ℕ ) = i + 1 := by
+  let h := coe_finRotate_of_ne_last ineqn
+  unfold next
+  rw [h]
+
+lemma finRotate_pred_apply (i : Fin (n + 1)) : (finRotate (n + 1)).symm i = i - 1 := by
+  rw [@Equiv.symm_apply_eq]
+  simp only [finRotate_succ_apply, sub_add_cancel]
+
+lemma prev_sub_one (i: Fin (n'+1)) (in0 : i ≠ 0) : (prev i:ℕ) = i - 1 := by
+  unfold prev
+  rw [@finRotate_pred_apply]
+  rw [@Fin.coe_sub_one]
+  simp only [ite_eq_else]
+  have : ¬ i= 0 := by
+    exact in0
+  intro h1
+  contradiction
+
+lemma prev_sub_iter  (k:ℕ) : ∀ (i: Fin (n'+1)),  (k ≤ i) →  (prev^[k] i : ℕ) = (i:ℕ) - k := by
+  induction' k with k ih
+  · intro i _
+    rfl
+  · intro i klei
+    rw [@Function.iterate_add_apply]
+    let j := prev^[1] i
+    let h1 := ih j
+    have ine0: i ≠ 0 := by
+      intro h1
+      rw [h1] at klei
+      norm_num at klei
+    have jei1: (j:ℕ) = (i:ℕ) - 1 := by
+      let h2 := prev_sub_one i ine0
+      have h3: j = prev i := by rfl
+      rw [h3.symm] at h2
+      exact h2
+    have klej: k ≤ (j:ℕ) := by
+      have klei1: k ≤ i -1 := by
+        have : (k + 1) ≤ i := by omega
+        have : (k + 1) - 1 ≤ i - 1 := by omega
+        exact this
+      rw [jei1.symm] at klei1
+      exact klei1
+    have : ((prev^[k] j) :ℕ)  = (j:ℕ) - k := by
+      exact h1 klej
+    rw [this]
+    rw [jei1]
+    rw [Nat.sub_sub]
+    omega
+
+lemma shift_property (v : Fin n → α) (i: Fin n): shift v i = v (prev i) := by
+  rfl
+
+lemma shift_iter_property (k:ℕ) : ∀ (v : Fin n → α) (i: Fin n) , shift^[k] v i = v (prev^[k] i) := by
   induction' k with k ih
   · intro v i
     rfl
@@ -96,10 +163,11 @@ def Y' (l : ℕ) : Matrix (Fin (4 * l + 6)) (Fin (4 * l + 6)) ℚ :=
 #eval Y' 2  - Y 2
 
 
+
 --def periodic_2_2 {n : ℕ} {α : Type*} (A : Matrix (Fin n) (Fin n) α) (nn0:n>0): Prop :=
 --  ∀ (i : Fin n) (j : Fin n), A i j = A (i + Fin.ofNat' 2 nn0) j
 
-def periodic_matrix {n : ℕ} {α : Type*} (A : Matrix (Fin n) (Fin n) α) (d : Fin n): Prop :=
+def periodic_matrix {n : ℕ} {α : Type*} (A : Matrix (Fin n) (Fin n) α) (d : ℕ): Prop :=
   ∀ (i j : Fin n), A i j = A (prev^[d] i) (prev^[d] j)
 
 lemma Y_is_2_periodic : ∀ (l : ℕ), periodic_matrix (Y l)  (2) := by
@@ -108,6 +176,13 @@ lemma Y_is_2_periodic : ∀ (l : ℕ), periodic_matrix (Y l)  (2) := by
   intro i j
   unfold Y
   simp only [of_apply]
+  cases Nat.lt_or_ge (↑i) 2 with
+  | inl hlt =>
+    sorry
+  | inr hge =>
+    sorry
+
+
   simp only [of_apply, Fin.val_two, Function.iterate_succ, Function.iterate_one,
     Function.comp_apply]
 
