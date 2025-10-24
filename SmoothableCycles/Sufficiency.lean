@@ -225,17 +225,17 @@ lemma Y_is_nonempty (l : ℕ) : (4 * l + 6) > 0 := by omega
 def Y' (l : ℕ) : Matrix (Fin (4 * l + 6)) (Fin (4 * l + 6)) ℚ :=
   let n := 4 * l + 6
   Matrix.of fun i j =>
-    if (j-i % n) == 1 then
-      if i % 2 == 0 then 2 else 1
-    else if (j-i % n) == -1 then
-      if i % 2 == 0 then -1 else -2
+    if (j-i % n) = 1 then
+      if i % 2 = 0 then 2 else 1
+    else if (j-i % n) = -1 then
+      if i % 2 = 0 then -1 else -2
     else if ((j-i % n) ≥  2 ∧ (j-i % n) ≤ 2*l+2) then 1
     else if (j-i % n) ≤ -2 ∧ (j-i % n) ≥ -(2*l+2) then -1
-    else if (j-i % n) == 2*l+3 then
-      if i % 2 == 0 then -1 else 1
+    else if (j-i % n) = 2*l+3 then
+      if i % 2 = 0 then -1 else 1
     else 0
 
-
+#eval Y' 1
 
 --def periodic_2_2 {n : ℕ} {α : Type*} (A : Matrix (Fin n) (Fin n) α) (nn0:n>0): Prop :=
 --  ∀ (i : Fin n) (j : Fin n), A i j = A (i + Fin.ofNat' 2 nn0) j
@@ -342,6 +342,87 @@ lemma Y_is_2_periodic : ∀ (l : ℕ), periodic_matrix (Y l)  (2) := by
     exact hh
 
 
+lemma Y'_is_2_periodic : ∀ (l : ℕ), periodic_matrix (Y' l)  (2) := by
+
+  intro l
+  unfold periodic_matrix
+  intro i j
+  unfold Y'
+  simp only [of_apply]
+  let n := 4 * l + 6
+  have c1: (j-i % n)=1 → (i % 2 = 0) → Y' l i j = 2 := by
+    intro h1 h2
+    unfold Y'
+    simp only [of_apply]
+    rw [h1, h2]
+    simp only [if_pos, if_neg, ite_eq_else]
+  have c1': (j-i % n)=1 → (i % 2 ≠ 0) → Y' l i j = 1 := by
+    intro h1 h2
+    unfold Y'
+    simp only [of_apply]
+    rw [h1]
+    simp only [if_neg, ite_eq_else]
+    simp only [↓reduceIte, ite_eq_else, OfNat.ofNat_ne_one, imp_false]
+    exact h2
+  have c2: (j-i % n)=-1 → (i % 2 = 0) → Y' l i j = -1 := by
+    intro h1 h2
+    unfold Y'
+    simp only [of_apply]
+    rw [h1, h2]
+    simp only [if_neg, ite_eq_else]
+    simp only [↓reduceIte, ite_eq_else, OfNat.ofNat_ne_one, imp_false]
+    have : ¬ (-1: Fin n) = (1: Fin n) := by
+      rw [@neg_eq_iff_add_eq_zero]
+      norm_num
+      have : ¬ n=2 := by omega
+      intro h1
+      let h := Fin.ext_iff.mp h1
+      contradiction
+    simp only [this]
+    simp only [false_implies]
+  -- split on the possible value of the difference (j - i) modulo n
+  by_cases h1 : (j - i % n) = 1
+  · -- case: difference = 1
+    by_cases hip : (i % 2 = 0)
+
+
+    · -- subcase: i even
+      simp only [CharP.cast_eq_zero, ge_iff_le, neg_add_rev, Function.iterate_succ,
+        Function.iterate_one, Function.comp_apply]
+
+      simp [h1, hip]
+
+    · -- subcase: i odd
+      simp [h1, hip]
+
+  · -- case: difference ≠ 1
+    by_cases h2 : (j - i % n) = -1
+    · -- case: difference = -1
+      by_cases hip : (i % 2 = 0)
+      · simp [h2, hip]
+      · simp [h2, hip]
+
+    · -- case: difference neither 1 nor -1
+      by_cases h3 : ((j - i % n) ≥ 2 ∧ (j - i % n) ≤ 2*l + 2)
+      · -- difference in [2, 2*l+2]
+        simp [h3]
+      · -- difference not in [2,2*l+2]
+        by_cases h4 : ((j - i % n) ≤ -2 ∧ (j - i % n) ≥ -(2*l+2))
+        · simp [h4]
+        · by_cases h5 : (j - i % n) = 2*l + 3
+          · by_cases hip : (i % 2 = 0); simp [h5, hip]
+          · -- final default case
+            simp [h1, h2, h3, h4, h5]
+
+  unfold Y'
+  simp only [of_apply]
+  let n := 4 * l + 6
+  by_cases
+    h1 : (j - i % n) = 1
+    h2 : (j - prev^[2] i % n) = 1
+  · rw [h1, h2]
+  · by_cases h3 : (j - i % n) = -1
+    h4 : (j
 end Y
 
 
